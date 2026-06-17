@@ -1,0 +1,111 @@
+<template>
+  <div class="adsr-panel">
+    <!-- Title -->
+    <div class="panel-title">── ENVELOPE ──</div>
+
+    <!-- 4 Knobs -->
+    <!--<div class="knob-wrapper"></div>-->
+    <div class="knobs-row">
+      <Knob v-for="def in ADSR_DEFS" :key="def.key" :label="def.label" :color="def.color" :value="values[def.key]"
+        :min="def.min" :max="def.max" @change="(v) => (values[def.key] = v)" />
+    </div>
+
+    <!-- Envelope curve -->
+    <EnvelopeCurve :attack="values.attack" :decay="values.decay" :sustain="values.sustain" :release="values.release" />
+
+    <!-- Readout strip -->
+    <div class="readout-strip">
+      <div v-for="def in ADSR_DEFS" :key="def.key" class="readout-cell">
+        <div class="readout-label">{{ def.label.slice(0, 3) }}</div>
+        <div class="readout-value" :style="{ color: def.color }">
+          {{ values[def.key].toFixed(2) }}s
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { reactive } from "vue";
+import Knob from "./Knob.vue";
+import EnvelopeCurve from "./EnvelopeCurve.vue";
+
+const ADSR_DEFS = [
+  { key: "attack", label: "Attack", color: "#5b8fff", min: 0.01, max: 5, default: 0.1 },
+  { key: "decay", label: "Decay", color: "#a78bfa", min: 0.01, max: 5, default: 0.3 },
+  { key: "sustain", label: "Sustain", color: "#34d399", min: 0, max: 1, default: 0.7 },
+  { key: "release", label: "Release", color: "#f472b6", min: 0.01, max: 10, default: 0.5 },
+];
+
+const values = reactive({
+  attack: 0.1,
+  decay: 0.3,
+  sustain: 0.7,
+  release: 0.5,
+});
+</script>
+
+<style scoped>
+.adsr-panel {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  padding: 36px 32px 32px;
+  background: linear-gradient(160deg, #0d0d1a 0%, #080810 100%);
+  border-radius: 24px;
+  border: 1px solid #1a1a2c;
+  box-shadow:
+    0 0 0 1px #06060e,
+    0 32px 64px rgba(0, 0, 0, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  font-family: "Inter", system-ui, sans-serif;
+  user-select: none;
+}
+
+.knob-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.panel-title {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #33334a;
+  font-family: monospace;
+  font-weight: 600;
+}
+
+.knobs-row {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.readout-strip {
+  display: flex;
+  gap: 20px;
+}
+
+.readout-cell {
+  text-align: center;
+}
+
+.readout-label {
+  font-size: 9px;
+  color: #333350;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-family: monospace;
+}
+
+.readout-value {
+  font-size: 12px;
+  font-family: monospace;
+  font-weight: 700;
+  margin-top: 2px;
+}
+</style>
