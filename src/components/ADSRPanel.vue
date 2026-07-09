@@ -26,23 +26,9 @@
 </template>
 
 <script setup>
-import { reactive } from "vue";
-import Knob from "./Knob.vue";
-import EnvelopeCurve from "./EnvelopeCurve.vue";
-
-const ADSR_DEFS = [
-  { key: "attack", label: "Attack", color: "#5b8fff", min: 0.01, max: 5, default: 0.1 },
-  { key: "decay", label: "Decay", color: "#a78bfa", min: 0.01, max: 5, default: 0.3 },
-  { key: "sustain", label: "Sustain", color: "#34d399", min: 0, max: 1, default: 0.7 },
-  { key: "release", label: "Release", color: "#f472b6", min: 0.01, max: 10, default: 0.5 },
-];
-
-const values = reactive({
-  attack: 0.1,
-  decay: 0.3,
-  sustain: 0.7,
-  release: 0.5,
-});
+  import Knob from "./Knob.vue";
+  import EnvelopeCurve from "./EnvelopeCurve.vue";
+  import { ADSR_DEFS, adsrValues as values } from "../utils/useADSR.js";
 </script>
 
 <style scoped>

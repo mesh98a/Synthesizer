@@ -1,7 +1,7 @@
 <template>
     <div class="sidebar-wrapper" :class="{ open: isOpen }">
         <!-- Arrow Toggle -->
-        <button class="sidebar-toggle" :class="{ open: isOpen }" @click="isOpen = !isOpen">
+        <button class="sidebar-toggle" :class="{ open: isOpen }" @click="isOpen = !isOpen; emit('toggle', isOpen)">
             <span :class="{ rotated: isOpen }">❯</span>
         </button>
 
@@ -15,10 +15,13 @@
 </template>
 
 <script setup>
-import { ref, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import * as Tone from "tone";
 import Oscillator from "./Oscillator.vue";
 import ADSRPanel from "./ADSRPanel.vue";
+import { analyserRef } from '../utils/useAudioEngine.js';
+
+const emit = defineEmits(['toggle']);
 
 const canvasRef = ref(null);
 const isOpen = ref(false);
@@ -39,34 +42,37 @@ const setSynth = (s) => {
 
 const draw = () => {
     const canvas = canvasRef.value;
-    if (!canvas || !analyser) return;
+    if (!canvas || !analyserRef.value) {
+        animationFrameId = requestAnimationFrame(draw);
+        return;
+    }
 
     const ctx = canvas.getContext("2d");
-    const values = analyser.getValue();
+    const values = analyserRef.value.getValue();
 
-    ctx.strokeStyle = "#00ff88"; // Wellenfarbe
+    ctx.strokeStyle = "#00ff88";
     ctx.lineWidth = 2;
-
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.beginPath();
 
     for (let i = 0; i < values.length; i++) {
         const x = (i / values.length) * canvas.width;
         const y = ((values[i] + 1) / 2) * canvas.height;
-
         i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
     }
 
     ctx.stroke();
-
     animationFrameId = requestAnimationFrame(draw);
 };
 
+onMounted(() => {
+    draw(); // startet den Loop sofort, wartet intern auf analyserRef
+});
+
 onUnmounted(() => {
     cancelAnimationFrame(animationFrameId);
-    synth?.dispose();
-    analyser?.dispose();
 });
+
 </script>
 
 <style scoped>
