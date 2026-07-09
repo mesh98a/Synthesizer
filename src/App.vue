@@ -1,10 +1,17 @@
 <template>
   <div class="synth-app">
     <div class="synth-main">
-      <div class="placeholder-stage"> Bars</div>
-      
+      <div class="placeholder-stage">
+        <VisualStage :activeNotes="activeNotes" :keys="sharedKeys" />
+      </div>
+
       <div class="keyboard-area">
-        <PianoKeyboard />
+        <PianoKeyboard 
+          :activeNotes="activeNotes" 
+          @keys-generated="handleKeysGenerated" 
+          @note-on="handleNoteOn"
+          @note-off="handleNoteOff"
+        />
       </div>
     </div>
 
@@ -16,6 +23,21 @@
 
 <script setup>
 import PianoKeyboard from './components/PianoKeyboard.vue';
+import VisualStage from './components/VisualStage.vue';
+import { ref } from 'vue';
+
+// The centralized reactive states
+const activeNotes = ref(new Set());
+const sharedKeys = ref([]);
+
+// Captures the 88 keys array sent up from the keyboard component
+function handleKeysGenerated(keysData) {
+  sharedKeys.value = keysData;
+}
+
+function handleNoteOn(note) { activeNotes.value.add(note); }
+
+function handleNoteOff(note) { activeNotes.value.delete(note); }
 </script>
 
 <style scoped>
@@ -39,9 +61,7 @@ import PianoKeyboard from './components/PianoKeyboard.vue';
 .placeholder-stage {
   flex: 1;
   background-color: #0a0807;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: relative;
   border-bottom: 2px solid #241d15;
 }
 
@@ -53,7 +73,7 @@ import PianoKeyboard from './components/PianoKeyboard.vue';
 }
 
 .keyboard-area {
-  height: 100px;
+  height: 160px;
   background-color: #161310;
   position: relative;
   width: 100%;

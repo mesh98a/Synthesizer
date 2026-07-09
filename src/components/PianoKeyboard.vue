@@ -23,10 +23,17 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import * as Tone from 'tone';
 
+const props = defineProps({
+  activeNotes: {
+    type: Object,
+    required: true
+  }
+});
+
+const emit = defineEmits(['keys-generated', 'note-on', 'note-off']);
+
 const keys = ref([]);
 const notesOrder = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-// notes that are playing right now
-const activeNotes = ref(new Set());
 
 let polySynth = null;
 
@@ -70,29 +77,33 @@ function generate88Keys() {
   });
 
   keys.value = generatedKeys;
+
+  emit('keys-generated', generatedKeys);
 }
 
 // TONE-FUNCTIONS
-function playNote(note) {
+async function playNote(note) {
+  if (props.activeNotes.has(note)) return;
   
-  if (Tone.context.state !== 'running') {
-    Tone.start();
-  }
+  if (Tone.context.state !== 'running') await Tone.start();
   
+
   if (polySynth) {
-    activeNotes.value.add(note);
     polySynth.triggerAttack(note);
+    emit('note-on', note);
     //TEST - MULTIPLE KEYS PRESSED
-    //activeNotes.value.add('C4');
-    //polySynth.triggerAttack('C4');
+    //props.activeNotes.add('C3');
+    //polySynth.triggerAttack('C3');
+    //props.activeNotes.add('D3');
+    //polySynth.triggerAttack('D3');
   }
 }
 
 function stopNote(note) {
   //release if note is  active
-  if (polySynth && activeNotes.value.has(note)) {
-    activeNotes.value.delete(note);
+  if (polySynth && props.activeNotes.has(note)) {
     polySynth.triggerRelease(note);
+    emit('note-off', note);
   }
 }
 
@@ -100,7 +111,7 @@ onMounted(() => {
   generate88Keys();
   polySynth = new Tone.PolySynth(Tone.Synth, {
     oscillator: {
-      type: 'triangle' // [fat] 'triangle','sine', 'sawtooth' , 'square'
+      type: 'triangle' //'triangle','sine', 'sawtooth' , 'square'
     }
   }).toDestination();
 });
@@ -167,7 +178,7 @@ onUnmounted(() => {
 }
 
 .key-black:active, .piano-key.key-black.is-active {
-  background: #000000;
+  background: #b33232 !important;
 }
 
 .key-label {
