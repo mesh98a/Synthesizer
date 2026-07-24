@@ -17,7 +17,7 @@ import { ref, onMounted, onUnmounted, watch } from 'vue';
 import * as Tone from 'tone';
 import { synthSettings } from '../utils/useSynthSettings.js';
 import { adsrValues } from '../utils/useADSR.js';
-import { polySynthRef, analyserRef } from '../utils/useAudioEngine.js';
+import { polySynthRef, analyserRef, fftAnalyserRef } from '../utils/useAudioEngine.js';
 
 const keys = ref([]);
 const notesOrder = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -25,6 +25,8 @@ const notesOrder = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 
 const activeNotes = ref(new Set());
 
 let polySynth = null;
+let waveformAnalyser = null;
+let fftAnalyser = null;
 
 function generate88Keys() {
   const generatedKeys = [];
@@ -102,11 +104,14 @@ onMounted(() => {
 
     polySynth.volume.value = synthSettings.volume;
 
-    const analyser = new Tone.Analyser("waveform", 1024);
-    polySynth.connect(analyser);
+    waveformAnalyser = new Tone.Analyser("waveform", 1024);
+    fftAnalyser = new Tone.Analyser("fft", 64);
+    polySynth.connect(waveformAnalyser);
+    polySynth.connect(fftAnalyser);
 
     polySynthRef.value = polySynth;
-    analyserRef.value = analyser;
+    analyserRef.value = waveformAnalyser;
+    fftAnalyserRef.value = fftAnalyser;
 
     watch(adsrValues, (v) => {
       polySynth?.set({ envelope: { ...v } });
@@ -121,19 +126,6 @@ onMounted(() => {
     });
 });
 
-// Live-Updates: sobald ein Knob gedreht wird, Envelope aktualisieren
-/*  watch(adsrValues, (newVal) => {
-   if (polySynth) {
-     polySynth.set({
-       envelope: {
-         attack: newVal.attack,
-         decay: newVal.decay,
-         sustain: newVal.sustain,
-         release: newVal.release,
-       }
-     });
-   }
- }, { deep: true }); */
 </script>
 
 <style scoped>

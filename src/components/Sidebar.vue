@@ -77,22 +77,20 @@ onUnmounted(() => {
 
 <style scoped>
 .sidebar-wrapper {
-    position: fixed;
-    top: 0;
-    right: -640px;
-    /* Sidebar versteckt */
-    width: 640px;
+    position: relative;
+    width: 0;
     height: 100vh;
-    transition: right 0.35s ease;
+    transition: width 0.35s ease;
+    overflow: visible;
     z-index: 1000;
 }
 
 .sidebar-wrapper.open {
-    right: 0;
+    width: 640px;
 }
 
 .sidebar {
-    width: 100%;
+    width: 640px;
     height: 100%;
 
     background: #1e1e2f;

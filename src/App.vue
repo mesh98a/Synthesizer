@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import Sidebar from './components/Sidebar.vue'
 import PianoKeyboard from './components/PianoKeyboard.vue'
+import FFTBild from './components/FFTBild.vue'
 
 const sidebarOpen = ref(false)
 </script>
@@ -13,6 +14,10 @@ const sidebarOpen = ref(false)
       
       <div class="keyboard-area">
         <PianoKeyboard />
+      </div>
+
+      <div class="fft-area">
+        <FFTBild />
       </div>
     </div>
 
@@ -40,12 +45,7 @@ const sidebarOpen = ref(false)
   display: flex;
   flex-direction: column;
   height: 100%;
-  margin-right: 0;
-  transition: margin-right 0.35s ease;
-}
-
-.synth-app.sidebar-open .synth-main {
-  margin-right: 640px;
+  min-width: 0;
 }
 
 .placeholder-stage {
@@ -58,8 +58,8 @@ const sidebarOpen = ref(false)
 }
 
 .synth-sidebar {
-  width: 0;
   flex: 0 0 auto;
+  height: 100%;
 }
 
 .keyboard-area {
@@ -67,5 +67,11 @@ const sidebarOpen = ref(false)
   background-color: #161310;
   position: relative;
   width: 100%;
+}
+
+.fft-area {
+  padding: 0 18px 18px;
+  background: linear-gradient(180deg, #161310 0%, #100e0b 100%);
+  border-top: 1px solid #241d15;
 }
 </style>
