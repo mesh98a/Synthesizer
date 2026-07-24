@@ -3,17 +3,39 @@ import { ref } from 'vue'
 import Sidebar from './components/Sidebar.vue'
 import PianoKeyboard from './components/PianoKeyboard.vue'
 import FFTBild from './components/FFTBild.vue'
+import VisualStage from './components/VisualStage.vue'
 
 const sidebarOpen = ref(false)
+const activeNotes = ref(new Set())
+const sharedKeys = ref([])
+
+function handleKeysGenerated(keysData) {
+  sharedKeys.value = keysData
+}
+
+function handleNoteOn(note) {
+  activeNotes.value.add(note)
+}
+
+function handleNoteOff(note) {
+  activeNotes.value.delete(note)
+}
 </script>
 
 <template>
   <div class="synth-app" :class="{ 'sidebar-open': sidebarOpen }">
     <div class="synth-main">
-      <div class="placeholder-stage"> Bars</div>
-      
+      <div class="placeholder-stage">
+        <VisualStage :active-notes="activeNotes" :keys="sharedKeys" />
+      </div>
+
       <div class="keyboard-area">
-        <PianoKeyboard />
+        <PianoKeyboard
+          :active-notes="activeNotes"
+          @keys-generated="handleKeysGenerated"
+          @note-on="handleNoteOn"
+          @note-off="handleNoteOff"
+        />
       </div>
 
       <div class="fft-area">
@@ -26,8 +48,6 @@ const sidebarOpen = ref(false)
     </aside>
   </div>
 </template>
-
-
 
 <style scoped>
 .synth-app {
@@ -50,10 +70,9 @@ const sidebarOpen = ref(false)
 
 .placeholder-stage {
   flex: 1;
+  min-height: 0;
   background-color: #0a0807;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: relative;
   border-bottom: 2px solid #241d15;
 }
 
@@ -63,7 +82,7 @@ const sidebarOpen = ref(false)
 }
 
 .keyboard-area {
-  height: 100px;
+  height: 160px;
   background-color: #161310;
   position: relative;
   width: 100%;
@@ -73,5 +92,17 @@ const sidebarOpen = ref(false)
   padding: 0 18px 18px;
   background: linear-gradient(180deg, #161310 0%, #100e0b 100%);
   border-top: 1px solid #241d15;
+}
+</style>
+
+<style>
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #14110d;
+  overflow: hidden;
 }
 </style>

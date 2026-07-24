@@ -1,10 +1,18 @@
 <template>
   <div class="keyboard-container">
-    <div v-for="key in keys" :key="key.note" :class="['piano-key',
-      key.isBlack ? 'key-black' : 'key-white',
-      { 'is-active': activeNotes.has(key.note) }
-    ]" :style="{ left: key.left + '%', width: key.width + '%' }" @mousedown="playNote(key.note)"
-      @mouseup="stopNote(key.note)" @mouseleave="stopNote(key.note)">
+    <div
+      v-for="key in keys"
+      :key="key.note"
+      :class="[
+        'piano-key',
+        key.isBlack ? 'key-black' : 'key-white',
+        { 'is-active': activeNotes.has(key.note) }
+      ]"
+      :style="{ left: key.left + '%', width: key.width + '%' }"
+      @mousedown="playNote(key.note)"
+      @mouseup="stopNote(key.note)"
+      @mouseleave="stopNote(key.note)"
+    >
       <span v-if="!key.isBlack && key.note.startsWith('C')" class="key-label">
         {{ key.note }}
       </span>
@@ -13,119 +21,126 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue';
-import * as Tone from 'tone';
-import { synthSettings } from '../utils/useSynthSettings.js';
-import { adsrValues } from '../utils/useADSR.js';
-import { polySynthRef, analyserRef, fftAnalyserRef } from '../utils/useAudioEngine.js';
+import { ref, onMounted, onUnmounted, watch } from 'vue'
+import * as Tone from 'tone'
+import { synthSettings } from '../utils/useSynthSettings.js'
+import { adsrValues } from '../utils/useADSR.js'
+import { polySynthRef, analyserRef, fftAnalyserRef } from '../utils/useAudioEngine.js'
 
-const keys = ref([]);
-const notesOrder = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-// notes that are playing right now
-const activeNotes = ref(new Set());
+const props = defineProps({
+  activeNotes: {
+    type: Object,
+    required: true
+  }
+})
 
-let polySynth = null;
-let waveformAnalyser = null;
-let fftAnalyser = null;
+const emit = defineEmits(['keys-generated', 'note-on', 'note-off'])
+
+const keys = ref([])
+const notesOrder = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+
+let polySynth = null
+let waveformAnalyser = null
+let fftAnalyser = null
 
 function generate88Keys() {
-  const generatedKeys = [];
+  const generatedKeys = [
+    { note: 'A0', isBlack: false },
+    { note: 'A#0', isBlack: true },
+    { note: 'B0', isBlack: false }
+  ]
 
-  // 1. octave 0
-  generatedKeys.push({ note: 'A0', isBlack: false });
-  generatedKeys.push({ note: 'A#0', isBlack: true });
-  generatedKeys.push({ note: 'B0', isBlack: false });
-
-  // 2. octave 1 to 7
-  for (let oct = 1; oct <= 7; oct++) {
-    notesOrder.forEach(noteName => {
+  for (let octave = 1; octave <= 7; octave++) {
+    notesOrder.forEach((noteName) => {
       generatedKeys.push({
-        note: noteName + oct,
+        note: noteName + octave,
         isBlack: noteName.includes('#')
-      });
-    });
+      })
+    })
   }
 
-  // 3. Octave 8
-  generatedKeys.push({ note: 'C8', isBlack: false });
+  generatedKeys.push({ note: 'C8', isBlack: false })
 
-  // 4. positioning of keys
-  const whiteKeys = generatedKeys.filter(k => !k.isBlack);
-  const totalWhiteWidth = 100 / whiteKeys.length;
-  const blackWidth = totalWhiteWidth * 0.6;
+  const whiteKeyCount = generatedKeys.filter((key) => !key.isBlack).length
+  const whiteWidth = 100 / whiteKeyCount
+  const blackWidth = whiteWidth * 0.6
+  let whiteIndex = 0
 
-  let whiteIndex = 0;
-
-  generatedKeys.forEach((key, index) => {
-    if (!key.isBlack) {
-      key.left = whiteIndex * totalWhiteWidth;
-      key.width = totalWhiteWidth;
-      whiteIndex++;
+  generatedKeys.forEach((key) => {
+    if (key.isBlack) {
+      key.left = whiteIndex * whiteWidth - blackWidth / 2
+      key.width = blackWidth
     } else {
-      key.left = (whiteIndex * totalWhiteWidth) - (blackWidth / 2);
-      key.width = blackWidth;
+      key.left = whiteIndex * whiteWidth
+      key.width = whiteWidth
+      whiteIndex++
     }
-  });
+  })
 
-  keys.value = generatedKeys;
+  keys.value = generatedKeys
+  emit('keys-generated', generatedKeys)
 }
 
-// TONE-FUNCTIONS
-function playNote(note) {
+async function playNote(note) {
+  if (props.activeNotes.has(note)) return
 
   if (Tone.context.state !== 'running') {
-    Tone.start();
+    await Tone.start()
   }
 
   if (polySynth) {
-    activeNotes.value.add(note);
-    polySynth.triggerAttack(note);
-    //TEST - MULTIPLE KEYS PRESSED
-    //activeNotes.value.add('C4');
-    //polySynth.triggerAttack('C4');
+    polySynth.triggerAttack(note)
+    emit('note-on', note)
   }
 }
 
 function stopNote(note) {
-  //release if note is  active
-  if (polySynth && activeNotes.value.has(note)) {
-    activeNotes.value.delete(note);
-    polySynth.triggerRelease(note);
+  if (polySynth && props.activeNotes.has(note)) {
+    polySynth.triggerRelease(note)
+    emit('note-off', note)
   }
 }
 
-
 onMounted(() => {
-    generate88Keys();
-    polySynth = new Tone.PolySynth(Tone.Synth, {
-      oscillator: { type: synthSettings.oscillatorType },
-      envelope: { ...adsrValues }
-    }).toDestination();
+  generate88Keys()
 
-    polySynth.volume.value = synthSettings.volume;
+  polySynth = new Tone.PolySynth(Tone.Synth, {
+    oscillator: { type: synthSettings.oscillatorType },
+    envelope: { ...adsrValues }
+  }).toDestination()
+  polySynth.volume.value = synthSettings.volume
 
-    waveformAnalyser = new Tone.Analyser("waveform", 1024);
-    fftAnalyser = new Tone.Analyser("fft", 64);
-    polySynth.connect(waveformAnalyser);
-    polySynth.connect(fftAnalyser);
+  waveformAnalyser = new Tone.Analyser('waveform', 1024)
+  fftAnalyser = new Tone.Analyser('fft', 64)
+  polySynth.connect(waveformAnalyser)
+  polySynth.connect(fftAnalyser)
 
-    polySynthRef.value = polySynth;
-    analyserRef.value = waveformAnalyser;
-    fftAnalyserRef.value = fftAnalyser;
+  polySynthRef.value = polySynth
+  analyserRef.value = waveformAnalyser
+  fftAnalyserRef.value = fftAnalyser
 
-    watch(adsrValues, (v) => {
-      polySynth?.set({ envelope: { ...v } });
-    }, { deep: true });
+  watch(adsrValues, (value) => {
+    polySynth?.set({ envelope: { ...value } })
+  }, { deep: true })
 
-    watch(() => synthSettings.oscillatorType, (t) => {
-      polySynth?.set({ oscillator: { type: t } });
-    });
+  watch(() => synthSettings.oscillatorType, (type) => {
+    polySynth?.set({ oscillator: { type } })
+  })
 
-    watch(() => synthSettings.volume, (v) => {
-      if (polySynth) polySynth.volume.value = v;
-    });
-});
+  watch(() => synthSettings.volume, (volume) => {
+    if (polySynth) polySynth.volume.value = volume
+  })
+})
 
+onUnmounted(() => {
+  polySynth?.dispose()
+  waveformAnalyser?.dispose()
+  fftAnalyser?.dispose()
+
+  polySynthRef.value = null
+  analyserRef.value = null
+  fftAnalyserRef.value = null
+})
 </script>
 
 <style scoped>
@@ -175,7 +190,7 @@ onMounted(() => {
   height: 62%;
   background: #1c1814;
   border: 1px solid #000;
-  box-shadow: inset 0px -4px 4px rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 -4px 4px rgba(0, 0, 0, 0.4);
   z-index: 2;
 }
 
@@ -185,7 +200,7 @@ onMounted(() => {
 
 .key-black:active,
 .piano-key.key-black.is-active {
-  background: #000000;
+  background: #b33232 !important;
 }
 
 .key-label {
