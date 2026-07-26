@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import Sidebar from './components/Sidebar.vue'
+import Sidebar from './components/sidebar/Sidebar.vue'
 import PianoKeyboard from './components/PianoKeyboard.vue'
 import FFTBild from './components/FFTBild.vue'
 import VisualStage from './components/VisualStage.vue'
@@ -9,10 +9,12 @@ const sidebarOpen = ref(false)
 const activeNotes = ref(new Set())
 const sharedKeys = ref([])
 
+// Übernimmt die berechneten Tastenpositionen für die visuelle Bühne
 function handleKeysGenerated(keysData) {
   sharedKeys.value = keysData
 }
 
+// Hält die Menge der aktuell gedrückten Noten synchron
 function handleNoteOn(note) {
   activeNotes.value.add(note)
 }

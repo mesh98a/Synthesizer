@@ -1,6 +1,7 @@
 import { reactive } from "vue";
 
+// Gemeinsame Klangeinstellungen für Oberfläche und Audio-Engine
 export const synthSettings = reactive({
-  oscillatorType: "triangle", // sine, square, triangle, sawtooth
-  volume: -12,
+    oscillatorType: "triangle", 
+    volume: -12,
 });

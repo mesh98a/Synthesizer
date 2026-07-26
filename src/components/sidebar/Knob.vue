@@ -1,8 +1,8 @@
 <template>
     <div class="knob-wrapper">
-        <!-- Knob container -->
+        <!-- Interaktiver Bereich des Drehreglers -->
         <div class="knob-container" @mousedown="startDrag" @touchstart.prevent="startDrag">
-            <!-- Tick marks -->
+            <!-- Skalenstriche rund um den Regler -->
             <div v-for="(tk, i) in ticks" :key="i" class="tick" :style="{
                 left: tk.x + 'px',
                 top: tk.y + 'px',
@@ -12,7 +12,7 @@
                 transform: `translate(-50%, -50%) rotate(${tk.deg + 90}deg)`,
             }" />
 
-            <!-- Knob body -->
+            <!-- Drehbarer Reglerkörper -->
             <div class="knob-body" :style="{
                 transform: `rotate(${rotation}deg)`,
             }">
@@ -22,8 +22,7 @@
             </div>
         </div>
 
-        <!-- Value display -->
-        <!-- Wert-Anzeige: Label der aktiven Kategorie oder numerischer Wert -->
+        <!-- Bezeichnung der aktiven Kategorie oder numerischer Wert -->
         <div class="knob-value">
             <template v-if="categories">
                 {{categories.find(c => c.value === value)?.label ?? value}}
@@ -33,7 +32,7 @@
             </template>
         </div>
 
-        <!-- Label -->
+        <!-- Beschriftung des Reglers -->
         <div class="knob-label">{{ label }}</div>
     </div>
 </template>
@@ -41,7 +40,7 @@
 <script setup>
 import { computed, ref } from "vue";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// Eigenschaften und geometrische Konstanten
 const props = defineProps({
     label: { type: String, required: true },
     color: { type: String, required: true },
@@ -68,11 +67,10 @@ const TICKS = props.ticks;
 
 const emit = defineEmits(["change"]);
 
+// Eindeutige Kennung für mögliche Farbverläufe
 const gradId = computed(() => `grad-${props.label}`);
 
-//const norm = computed(() => (props.value - props.min) / (props.max - props.min));
-
-
+// Normalisiert Kategorien oder Zahlenwerte auf den Bereich von null bis eins
 const categoryCount = computed(() => props.categories?.length ?? 0);
 
 const norm = computed(() => {
@@ -87,6 +85,7 @@ const norm = computed(() => {
 const rotation = computed(() => MIN_DEG + norm.value * RANGE);
 const fillLen = computed(() => ARC * norm.value);
 
+// Berechnet Position und Aktivzustand jedes Skalenstrichs
 const ticks = computed(() =>
     Array.from({ length: TICKS }, (_, i) => {
         const t = i / (TICKS - 1);
@@ -98,7 +97,7 @@ const ticks = computed(() =>
     })
 );
 
-// ─── Drag logic ───────────────────────────────────────────────────────────────
+// Steuert Maus- und Touchbewegungen während des Ziehens
 const isDragging = ref(false);
 const startY = ref(0);
 const startVal = ref(0);
@@ -115,11 +114,13 @@ function startDrag(e) {
         const delta = (startY.value - y) / 160;
 
         if (props.categories) {
+            // Rastet bei kategorialen Werten auf dem nächsten Eintrag ein
             const currentIdx = props.categories.findIndex(c => c.value === startVal.value);
             const rawIdx = currentIdx + delta * (categoryCount.value - 1);
             const clampedIdx = Math.round(Math.max(0, Math.min(categoryCount.value - 1, rawIdx)));
             emit("change", props.categories[clampedIdx].value);
         } else {
+            // Begrenzt numerische Werte auf den erlaubten Bereich
             const next = Math.max(
                 props.min,
                 Math.min(props.max, startVal.value + delta * (props.max - props.min))
@@ -129,6 +130,7 @@ function startDrag(e) {
     }
 
     function onUp() {
+        // Entfernt globale Ereignisse nach Abschluss der Interaktion
         isDragging.value = false;
         globalThis.removeEventListener("mousemove", onMove);
         globalThis.removeEventListener("touchmove", onMove);
