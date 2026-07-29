@@ -94,6 +94,8 @@ onMounted(() => {
 onUnmounted(() => {
     disposeAudioEngine()
 })
+
+defineExpose({ playNote, stopNote })
 </script>
 
 <style scoped>
