@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue'
+import MidiPlayer from './components/MidiPlayer.vue'
 import Sidebar from './components/sidebar/Sidebar.vue'
 import PianoKeyboard from './components/PianoKeyboard.vue'
 import FFTBild from './components/FFTBild.vue'
@@ -8,6 +9,7 @@ import VisualStage from './components/VisualStage.vue'
 const sidebarOpen = ref(false)
 const activeNotes = ref(new Set())
 const sharedKeys = ref([])
+const keyboardRef = ref(null)
 
 // Übernimmt die berechneten Tastenpositionen für die visuelle Bühne
 function handleKeysGenerated(keysData) {
@@ -27,12 +29,15 @@ function handleNoteOff(note) {
 <template>
   <div class="synth-app" :class="{ 'sidebar-open': sidebarOpen }">
     <div class="synth-main">
+      <MidiPlayer :keyboard-ref="keyboardRef" />
+      
       <div class="placeholder-stage">
         <VisualStage :active-notes="activeNotes" :keys="sharedKeys" />
       </div>
 
       <div class="keyboard-area">
         <PianoKeyboard
+          ref="keyboardRef"
           :active-notes="activeNotes"
           @keys-generated="handleKeysGenerated"
           @note-on="handleNoteOn"
